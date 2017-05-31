@@ -43,13 +43,39 @@ gulp.task('stderr', cb => {
   });
 });
 
+gulp.task('stderr-out-of-memory', cb => {
+  const child = spawn('node', [
+    '--max_old_space_size=5',
+    '.'
+  ]);
+  let stderr = '';
+
+  child.stderr.on('data', data => {
+    stderr += data;
+  });
+
+  child.on('close', code => {
+    if (code !== null) {
+      cb(code);
+      return;
+    }
+
+    if (stderr !== '') {
+      cb(stderr);
+      return;
+    }
+
+    cb();
+  });
+});
+
 gulp.task('reject', () => new Promise((resolve, reject) => {
   reject('reject');
 }));
 
 gulp.task('promise-reject', () => Promise.reject('promise-reject'));
 
-gulp.task('fail', ['close-error', 'error', 'stderr', 'reject', 'promise-reject']);
+gulp.task('fail', ['close-error', 'error', 'stderr', 'stderr-out-of-memory', 'reject', 'promise-reject']);
 
 gulp.task('default', ['success', 'fail']);
 
